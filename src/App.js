@@ -46,23 +46,56 @@ const App = () => {
   }
 
   // Publish new name
-  const publishName = async({e,index}) =>{
-
+  const publishName = async(index) =>{
+    console.log('Publishing...');
     let cidListLength = name[index].cid_list.length;
 
     if(cidListLength > 0){
 
       // Create Revision or version 0
-      let revisionToBeInserted = await Name.v0(name[index].name, name[index].cid_list[cidListLength - 1]);
-
+      /* Using Name.v0 to create initial revision
+      const revision = await Name.v0(name, value);*/
+      let revisionToBeInserted = await Name.v0(name[index].name, `/ipfs/${name[index].cid_list[cidListLength - 1]}`);
+      //console.log(revisionToBeInserted);
       // Publish the revision
       let publishedRevision = await Name.publish(revisionToBeInserted,name[index].name.key);
-      console.log(revisionToBeInserted);
-      /*if(publishedRevision){
-        name[index].publishedCounter++;
-        
-      }*/
-      // Link to view the data
+      console.log(revisionToBeInserted);  
+      
+
+      console.log(`https://gateway.ipfs.io/ipns/${name[index].name}`);
+    }
+    else{
+      alert('CID Doesnt exist');
+    }
+    
+  }
+
+  // Republish name
+   const republishName = async(index) =>{
+    console.log('Republishing.....'+name[index].name)// This is done
+
+    // Getting the latest name
+    let nameParse = Name.parse(name[index].name.toString());
+    let latestRevision = await Name.resolve(nameParse);
+    console.log('Latest value:', latestRevision);// Done
+
+    let cidListLength = name[index].cid_list.length;
+
+    if(cidListLength > 1){
+
+      // Create Revision or version 0
+      /* Using Name.v0 to create initial revision
+      const revision = await Name.v0(name, value);*/
+      let revisionToBeInserted = await Name.increment(latestRevision, `/ipfs/${name[index].cid_list[cidListLength - 1]}`);
+      console.log("Length:"+cidListLength);// Done
+      console.log("latest CID:",name[index].cid_list[cidListLength - 1]);// Done
+      console.log("Latest revision:",revisionToBeInserted);// Done
+      console.log("name key:",name[index].name.key);// Done
+      // Publish the revision
+      //let publishedRevision = 
+      let newRevision = await Name.publish(revisionToBeInserted,name[index].name.key);
+      console.log("New published revision",newRevision);
+      
 
       console.log(`https://gateway.ipfs.io/ipns/${name[index].name}`);
     }
@@ -88,6 +121,7 @@ const App = () => {
             <div key={index} className="border m-3 p-2 bg-light w-75 border border-dark rounded-3">
               <h1>{index}</h1>
               Name: <span><a href={`https://gateway.ipfs.io/ipns/${value.name}`} target="_blank">{value.name.toString()}</a></span>
+              {/* Submit form for CID_HASH */}
               <form className='form' onSubmit={(event) => formSubmitted({event,index})}>
                   <label>
                     CID_Hash:
@@ -96,8 +130,8 @@ const App = () => {
                     <input type="submit" className='btn btn-light border border-dark' value="Submit" /> 
               </form>
               
+              {value.cid_list.length > 1? <button className='btn bg-dark text-white' onClick={() => republishName(index)}>Re-Publish</button>: <button className='btn bg-dark text-white' onClick={() => publishName(index)}>Publish</button> }
               
-              <button className='btn bg-dark text-white' onClick={(e) => publishName({e,index})}>Publish</button>
             </div>
 
           );
